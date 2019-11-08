@@ -1,30 +1,22 @@
 from aiohttp import web
+from routers import dsRoutes
+import asyncio
 import logging
-
-routes = web.RouteTableDef()
-
-
-@routes.get('/')
-async def root(request):
-    return web.json_response({'suc': True, 'addr': 'STATIC'})
+from services.DSServices import beat
 
 
-@routes.post('/')
-async def a(request):
-    return web.json_response({'msg': 'post at root'})
+async def start_background_tasks(app):
+    app['heart_beater'] = asyncio.create_task(beat())
 
 
-@routes.post('/{any}')
-async def b(request):
-    result = await request.json()
-    print(result)
-    return web.json_response({'msg': 'post at /{any}'})
+async def cleanup_background_tasks(app):
+    app['heart_beater'].cancel()
+    await app['heart_beater']
 
-@routes.get('/file/{any}')
-async def filehandler(request):
-    return web.Response(text='a')
 
 app = web.Application()
+app.on_startup.append(start_background_tasks)
+app.on_cleanup.append(cleanup_background_tasks)
 logging.basicConfig(level=logging.DEBUG)
-app.add_routes(routes)
+app.add_routes(dsRoutes)
 web.run_app(app, port=18888, access_log_format='%a %t %r %s %b %Tf')

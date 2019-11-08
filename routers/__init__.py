@@ -1,3 +1,3 @@
 from routers.DNSRouter import routes as dnsRoutes
-
-__all__ = [dnsRoutes]
+from routers.DSRouter import routes as dsRoutes
+__all__ = [dnsRoutes,dsRoutes]
