@@ -1,4 +1,5 @@
 import asyncio
+import aiohttp
 
 HEARTBEAT_TIMEOUT = 5
 SN_STATUS = list((HEARTBEAT_TIMEOUT,) * 8)
@@ -17,6 +18,8 @@ async def beat():
     while True:
         await asyncio.sleep(1)
         SN_STATUS = list(map(countdown, SN_STATUS))
+        async with aiohttp.ClientSession() as session:
+            await session.put('http://127.0.0.1:18888/sync', json=getState())
 
 
 def getFileList():
@@ -37,3 +40,15 @@ def getStorageNodeStatus(id=-1):
 
 def refreshStorgateNodeStatus(id):
     SN_STATUS[id] = HEARTBEAT_TIMEOUT
+
+
+def getState():
+    return {'FILE_LIST': FILE_LIST, 'SN_STATUS': SN_STATUS}
+
+
+def setState(state):
+    global FILE_LIST
+    global SN_STATUS
+    global ret
+    FILE_LIST = state['FILE_LIST']
+    SN_STATUS = state['SN_STATUS']
