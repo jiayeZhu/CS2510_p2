@@ -22,6 +22,12 @@ async def beat():
             await session.put('http://127.0.0.1:18888/sync', json=getState())
 
 
+async def connect():
+    for id in range(len(SN_STATUS)):
+        if getStorageNodeStatus(id) != 0:
+            return id
+
+
 def getFileList():
     return list(FILE_LIST)
 
