@@ -1,4 +1,4 @@
 from services.DNSServices import *
 from services.DSServices import *
 
-__all__ = [getOneDS, getStorageNodeStatus, refreshStorgateNodeStatus, beat, getState, setState]
+__all__ = [setDSList, getOneDS, getStorageNodeStatus, refreshStorgateNodeStatus, beat, getState, setState]
