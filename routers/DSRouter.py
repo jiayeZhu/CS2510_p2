@@ -25,12 +25,10 @@ async def connectHandler(request):
 
 
 async def getFileListHandler(request):
-    FileList = getFileList()
-    return web.Response(text = (", ".join(str(f) for f in FileList)))
-
+    return web.json_response({'fileList:':getFileList()})
 
 async def addFileHandler(request):
-    files = list(request.match_info['filename'])
+    files = [(request.match_info['filename'])]
     addFileToFileList(files)
     return web.Response()
 

@@ -50,12 +50,12 @@ def refreshStorgateNodeStatus(id):
 
 
 def getState():
-    return {'FILE_LIST': FILE_LIST, 'SN_STATUS': SN_STATUS}
+    return {'FILE_LIST': list(FILE_LIST), 'SN_STATUS': SN_STATUS}
 
 
 def setState(state):
     global FILE_LIST
     global SN_STATUS
     global ret
-    FILE_LIST = state['FILE_LIST']
+    FILE_LIST = set(state['FILE_LIST'])
     SN_STATUS = state['SN_STATUS']
