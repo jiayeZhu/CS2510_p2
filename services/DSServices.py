@@ -1,9 +1,11 @@
 import asyncio
 import aiohttp
+import random
 
 HEARTBEAT_TIMEOUT = 5
 SN_STATUS = list((HEARTBEAT_TIMEOUT,) * 8)
 FILE_LIST = {}
+SN_ADDR_LIST = ['127.0.0.1:20001','127.0.0.1:20002','127.0.0.1:20003','127.0.0.1:20004','127.0.0.1:20005','127.0.0.1:20006','127.0.0.1:20007','127.0.0.1:20008']
 
 
 def countdown(x):
@@ -23,9 +25,8 @@ async def beat():
 
 
 async def connect():
-    for id in range(len(SN_STATUS)):
-        if getStorageNodeStatus(id) != 0:
-            return id
+    candidates = [idx for idx in range(8) if SN_STATUS[idx] is not 0]
+    return SN_ADDR_LIST[random.sample(candidates,1)[0]] if len(candidates) is not 0 else 'N/A'
 
 
 def getFileList():
