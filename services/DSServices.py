@@ -10,7 +10,7 @@ SN_ADDR_LIST = ['127.0.0.1:20001', '127.0.0.1:20002', '127.0.0.1:20003', '127.0.
 PORT = 18888
 PEERS = []
 DNS_addr = '127.0.0.1:8888'
-
+FIRST = True
 
 def setDSPORT(port):
     global PORT
@@ -39,11 +39,42 @@ def countdown(x):
         return x - 1
 
 
+async def sync():
+    global PEERS
+    global DNS_addr
+    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+        DSID = getDSPORT() - 18888
+        try:
+            peers = await session.get('http://' + DNS_addr + '/ds/list/alive')
+            peers = await peers.json()
+            setDSPeers(peers['ds_list'])
+            tasks = [session.put('http://' + addr + '/sync', json=getDSState()) for addr in PEERS if addr != '127.0.0.1:{}'.format(getDSPORT())]
+            if len(tasks) != 0:
+                await asyncio.wait(tasks)
+        except:
+            print('DS {} failed when sync()'.format(DSID))
+
+
 async def DSbeat():
     global SN_STATUS
     global DNS_addr
     global PEERS
+    global FIRST
     await asyncio.sleep(1)
+    if FIRST:
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+            try:
+                peers = await session.get('http://' + DNS_addr + '/ds/list/alive')
+                peers = await peers.json()
+                if len(peers['ds_list']) == 0: # no alive nodes, state is clean
+                    FIRST = False
+                else:
+                    state = await session.get('http://{}/sync'.format(peers['ds_list'][0]))
+                    state = await state.json()
+                    print(state)
+                    FIRST = False
+            except:
+                pass
     while True:
         await asyncio.sleep(1)
         SN_STATUS = list(map(countdown, SN_STATUS))
@@ -51,12 +82,9 @@ async def DSbeat():
             DSID = getDSPORT() - 18888
             try:
                 await session.put('http://{}/ds/hb/{}'.format(DNS_addr, DSID))
-                peers = await session.get('http://' + DNS_addr + '/ds/list/alive')
-                peers = await peers.json()
-                setDSPeers(peers['ds_list'])
-                await asyncio.wait([session.put('http://' + addr + '/sync', json=getState()) for addr in PEERS])
             except:
                 print('DS {} failed when beat()'.format(DSID))
+            # await sync()
 
 
 
@@ -70,8 +98,9 @@ def getFileList():
 
 
 # files should be a list of filename
-def addFileToFileList(files):
+async def addFileToFileList(files):
     FILE_LIST.update(files)
+    await sync()
 
 
 def getStorageNodeStatus(id=-1):
@@ -81,17 +110,17 @@ def getStorageNodeStatus(id=-1):
         return SN_STATUS[id]
 
 
-def refreshStorgateNodeStatus(id):
+async def refreshStorgateNodeStatus(id):
     SN_STATUS[id] = HEARTBEAT_TIMEOUT
+    await sync()
 
 
-def getState():
+def getDSState():
     return {'FILE_LIST': list(FILE_LIST), 'SN_STATUS': SN_STATUS}
 
 
 def setState(state):
     global FILE_LIST
     global SN_STATUS
-    global ret
     FILE_LIST = set(state['FILE_LIST'])
     SN_STATUS = state['SN_STATUS']
