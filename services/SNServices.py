@@ -2,13 +2,36 @@ import asyncio, aiohttp
 import hashlib
 import json
 import os
-from StorageNode import PORT, server, folder
 
 
 
 SN = {1:20001, 2:20002, 3:20003, 4:20004, 5:20005, 6:20006, 7:20007, 8:20008}  # nodeId : port
-currentNode = PORT[-1]
-FILE_LIST = set(os.listdir(folder))
+currentNode = 1
+currentPort = 20001
+server = "127.0.0.1:8888"
+folder = 'SN{}_storage'.format(currentNode)
+FILE_LIST = {}
+
+
+def setPort(port):
+    global currentPort, currentNode
+    currentPort = port
+    currentNode = int(str(currentPort)[-1])
+    print('port : {}   nodeID : {}'.format(currentPort, currentNode))
+
+def setServer(serveraddr):
+    global server
+    server = serveraddr
+    print('server : {}'.format(server))
+
+def setFolder(folderName):
+    global folder, FILE_LIST
+    folder = folderName
+    if not os.path.exists(folder):
+        os.makedirs(folder)
+    # os.makedirs('{}'.format(folder))
+    FILE_LIST = set(os.listdir(folder))
+    print('folder : {}   FILE_LIST : {}'.format(folder, FILE_LIST))
 
 
 def computeHash(x):
@@ -39,13 +62,13 @@ async def addFileToNode(filename, content):
         # find where should this file stored
         hashKey = computeHash(filename)
         nodeID = findLocation(hashKey)
-        print('this file should be stored at node {}'.format(nodeID))
+        print('this file should be stored at node {}, currentNode is {}'.format(nodeID, currentNode))
         # Forward the request
         count = 3
         n = len(SN)
         async with aiohttp.ClientSession() as session:
             while count > 0:
-                print('count : ', count)
+                print('count :', count)
                 if(nodeID == currentNode):
                     storeFile(filename, content)
                     FILE_LIST.add(filename)
@@ -82,8 +105,10 @@ async def readFile(filename):
             nodeID = findLocation(hashKey)
             count = 3
             n = len(SN)
+            print('file {} is stored at node: {}'.format(filename, nodeID))
             while count > 0:
                 nodePort = SN[nodeID]
+                print("the request is : https://127.0.0.1:{}/file/{}".format(nodePort, filename))
                 async with session.get('https://127.0.0.1:{}/file/{}'.format(nodePort, filename)) as resp:
                     response = await resp.content()
                     if resp.status == 200:
@@ -92,8 +117,8 @@ async def readFile(filename):
                         print(' SN {} fail to read file {}'.format(nodeID, filename))
                         nodeID = (nodeID - 1 + n) % n
                         count = count - 1
-    return response
-    # return  str(response, encoding='utf-8')
+    # return response
+    return  str(response, encoding='utf-8')
 
 
 def getFileList():

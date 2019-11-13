@@ -5,23 +5,23 @@ import getopt
 import sys
 import os
 from routers.SNRouter import routes
+from services.SNServices import setPort, setServer, setFolder
 
 
 PORT = 20001
-server = "127.0.0.1:8888"
-folder = 'SN1_storage'
 
 def print_help():
     print("python3 StorageNode.py [options]\n"
           "\t-h show this help\n"
           "\t-p <listening to this port>\n"
-          "\t--servers=\"ADDR:PORT\""
+          "\t--servers=\"ADDR:PORT\"\n"
           "\t-d store files in this folder\n")
     return
 
 # options parser
 try:
-    opts, args = getopt.getopt(sys.argv[1:], 'hp:d', 'servers=')
+    opts, args = getopt.getopt(sys.argv[1:], 'hp:d:', 'servers=')
+    # print(opts)
 except getopt.GetoptError:
     print_help()
     sys.exit(2)
@@ -31,11 +31,11 @@ for (opt, arg) in opts:
         sys.exit()
     elif opt == '-p':
         PORT = int(arg)
+        setPort(int(arg))
     elif opt == '--servers':
-        server = str(arg)
+        setServer(str(arg))
     elif opt == '-d':
-        folder = os.getcwd()[:-len(arg)] + '{}\\'.format(arg)
-        os.makedirs(folder)
+        setFolder(str(arg))
 
 
 app = web.Application()
