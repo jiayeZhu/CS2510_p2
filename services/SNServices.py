@@ -2,11 +2,13 @@ import asyncio, aiohttp
 import hashlib
 import json
 import os
+from StorageNode import PORT, server, folder
+
+
 
 SN = {1:20001, 2:20002, 3:20003, 4:20004, 5:20005, 6:20006, 7:20007, 8:20008}  # nodeId : port
-currentNode = 1  #TODO
-FILE_LIST = set(os.listdir('SN{}_storage'.format(currentNode)))
-# chunk_size = 30
+currentNode = PORT[-1]
+FILE_LIST = set(os.listdir(folder))
 
 
 def computeHash(x):
@@ -14,7 +16,7 @@ def computeHash(x):
 
 
 def storeFile(filename, fileContent):
-    with open('SN{}_storage/{}'.format(currentNode, filename), 'wb') as f:
+    with open('{}/{}'.format(folder, filename), 'wb') as f:
         f.write(fileContent)
 
 
@@ -57,7 +59,7 @@ async def addFileToNode(filename, content):
                 if nodeID == 0 : nodeID = 8
                 count = count - 1
             # notify the directory server about adding the file
-            async with session.post('https://127.0.0.1:18888/file/{}'.format(filename), data = filename) as resp:
+            async with session.post('https://127.0.0.1:8888/file/{}'.format(filename), data = filename) as resp:
                 await resp.status
         
 
@@ -67,7 +69,7 @@ async def readFile(filename):
     # if the file is stored in the current node
     if filename in FILE_LIST:
         try:
-            f = open('SN{}_storage/{}'.format(currentNode, filename), 'rb')
+            f = open('{}/{}'.format(folder, filename), 'rb')
             response = f.read()
         finally:
             if f:
@@ -76,21 +78,22 @@ async def readFile(filename):
     else:
         async with aiohttp.ClientSession() as session:
             # find out where this file stored
-            hashKey = str(hashlib.sha1(str(filename).encode('utf-8')).hexdigest())
+            hashKey = computeHash(filename)
             nodeID = findLocation(hashKey)
             count = 3
             n = len(SN)
             while count > 0:
                 nodePort = SN[nodeID]
                 async with session.get('https://127.0.0.1:{}/file/{}'.format(nodePort, filename)) as resp:
-                    if await resp.status == 200:
-                        response = resp.content()
+                    response = await resp.content()
+                    if resp.status == 200:
                         break
                     else:
                         print(' SN {} fail to read file {}'.format(nodeID, filename))
                         nodeID = (nodeID - 1 + n) % n
                         count = count - 1
-    return  str(response, encoding='utf-8')
+    return response
+    # return  str(response, encoding='utf-8')
 
 
 def getFileList():
