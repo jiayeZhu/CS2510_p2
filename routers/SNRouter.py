@@ -12,8 +12,10 @@ async def addFileHandler(request):
 async def readFileHandler(request):
     filename = request.match_info['filename']
     response = await readFile(filename)
-    # return web.json_response({'filename':filename, 'content':response})
-    return web.Response(body=response)
+    if response:
+        return web.Response(body=response)
+    else:
+        raise web.HTTPNotFound
 
 #return the list of files stored in current node
 async def getFileListHandler(request):
