@@ -108,17 +108,18 @@ async def readFile(filename):
             print('file {} is stored at node: {}'.format(filename, nodeID))
             while count > 0:
                 nodePort = SN[nodeID]
-                print("the request is : https://127.0.0.1:{}/file/{}".format(nodePort, filename))
-                async with session.get('https://127.0.0.1:{}/file/{}'.format(nodePort, filename)) as resp:
-                    response = await resp.content()
+                print("the request is : http://127.0.0.1:{}/file/{}".format(nodePort, filename))
+                async with session.get('http://127.0.0.1:{}/file/{}'.format(nodePort, filename)) as resp:
+                    response = await resp.read()
                     if resp.status == 200:
                         break
                     else:
                         print(' SN {} fail to read file {}'.format(nodeID, filename))
                         nodeID = (nodeID - 1 + n) % n
                         count = count - 1
-    # return response
-    return  str(response, encoding='utf-8')
+    return response
+    # print(response)
+    # return  str(response, encoding='utf-8')
 
 
 def getFileList():
