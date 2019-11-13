@@ -1,9 +1,10 @@
 from aiohttp import web
 from routers import dnsRoutes
 import logging
-from services import setDSList
+from services import setDSList, DNSbeat
 import sys
 import getopt
+import asyncio
 
 
 def print_help():
@@ -11,6 +12,15 @@ def print_help():
           "\t-h show this help\n"
           "\t--DSLIST=\"DS0ADDR:PORT,DS1ADDR:PORT,DS2ADDR:PORT\"")
     return
+
+
+async def start_background_tasks(app):
+    app['heart_beater'] = asyncio.create_task(DNSbeat())
+
+
+async def cleanup_background_tasks(app):
+    app['heart_beater'].cancel()
+    await app['heart_beater']
 
 
 # options parser
@@ -28,6 +38,8 @@ for (opt, arg) in opts:
         setDSList(arg.split(','))
 
 app = web.Application()
+app.on_startup.append(start_background_tasks)
+app.on_cleanup.append(cleanup_background_tasks)
 logging.basicConfig(level=logging.DEBUG)
 app.add_routes(dnsRoutes)
 web.run_app(app, port=8888, access_log_format='%a %t %r %s %b %Tf')
