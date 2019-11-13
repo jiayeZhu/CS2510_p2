@@ -13,6 +13,20 @@ folder = 'SN{}_storage'.format(currentNode)
 FILE_LIST = {}
 
 
+async def SNbeat():
+    global server
+    await asyncio.sleep(1)
+    while True:
+        await asyncio.sleep(1)
+        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+            SNID = currentNode-1
+            try:
+                await session.put('http://{}/hb/{}'.format(server, SNID))
+            except Exception as e:
+                print('SN {} failed when beat() with exception'.format(SNID))
+                print(e)
+
+
 def setPort(port):
     global currentPort, currentNode
     currentPort = port

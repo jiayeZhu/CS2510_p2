@@ -5,10 +5,19 @@ import getopt
 import sys
 import os
 from routers.SNRouter import routes
-from services.SNServices import setPort, setServer, setFolder
+from services.SNServices import setPort, setServer, setFolder, SNbeat
 
 
 PORT = 20001
+
+async def start_background_tasks(app):
+    app['heart_beater'] = asyncio.create_task(SNbeat())
+
+
+async def cleanup_background_tasks(app):
+    app['heart_beater'].cancel()
+    await app['heart_beater']
+
 
 def print_help():
     print("python3 StorageNode.py [options]\n"
@@ -39,8 +48,8 @@ for (opt, arg) in opts:
 
 
 app = web.Application()
-# app.on_startup.append()
-# app.on_cleanup.append()
+app.on_startup.append(start_background_tasks)
+app.on_cleanup.append(cleanup_background_tasks)
 logging.basicConfig(level=logging.DEBUG)
 app.add_routes(routes)
 web.run_app(app, port=PORT, access_log_format='%a %t %r %s %b %Tf')
