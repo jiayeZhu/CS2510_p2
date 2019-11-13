@@ -73,16 +73,16 @@ async def addFileToNode(filename, content):
                     storeFile(filename, content)
                     FILE_LIST.add(filename)
                 else:
-                    print('the request is : https://127.0.0.1:{}/file/{}'.format(SN[nodeID], filename)  )
+                    print('the request is : http://127.0.0.1:{}/file/{}'.format(SN[nodeID], filename)  )
                     nodePort = SN[nodeID]
-                    async with session.post('https://127.0.0.1:{}/file/{}'.format(nodePort, filename), data=content) as resp:
+                    async with session.post('http://127.0.0.1:{}/file/{}'.format(nodePort, filename), data=content) as resp:
                         print(await resp.status)
                 print(' file: {} is added to SN: {}  '.format(filename, nodeID))
                 nodeID = (nodeID - 1 + n) % n
                 if nodeID == 0 : nodeID = 8
                 count = count - 1
             # notify the directory server about adding the file
-            async with session.post('https://127.0.0.1:8888/file/{}'.format(filename), data = filename) as resp:
+            async with session.post('http://127.0.0.1:8888/file/{}'.format(filename), data = filename) as resp:
                 await resp.status
         
 
@@ -111,6 +111,7 @@ async def readFile(filename):
                 print("the request is : http://127.0.0.1:{}/file/{}".format(nodePort, filename))
                 async with session.get('http://127.0.0.1:{}/file/{}'.format(nodePort, filename)) as resp:
                     response = await resp.read()
+                    print(await resp.read())
                     if resp.status == 200:
                         break
                     else:
