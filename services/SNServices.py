@@ -6,22 +6,26 @@ import random
 
 
 SN = {1:20001, 2:20002, 3:20003, 4:20004, 5:20005, 6:20006, 7:20007, 8:20008}  # nodeId : port
+ALIVE_SN=[]
 currentNode = 1
 currentPort = 20001
 server = "127.0.0.1:8888"
 folder = 'SN{}_storage'.format(currentNode)
-FILE_LIST = {}
+FILE_LIST = set()
 
 
 async def SNbeat():
     global server
+    global ALIVE_SN
     await asyncio.sleep(1)
     while True:
         await asyncio.sleep(1)
         async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
             SNID = currentNode-1
             try:
-                await session.put('http://{}/hb/{}'.format(server, SNID))
+                result = await session.put('http://{}/hb/{}'.format(server, SNID))
+                result = await result.json()
+                ALIVE_SN = result['alive_sn_list']
             except Exception as e:
                 print('SN {} failed when beat() with exception'.format(SNID))
                 print(e)
@@ -56,17 +60,31 @@ def storeFile(filename, fileContent):
     with open('{}/{}'.format(folder, filename), 'wb') as f:
         f.write(fileContent)
 
+def findSection(hashkey):
+    return hashkey//(2**157) # 0~7
 
 def findLocation(hashKey):
-    n = len(SN)
-    division = int(((2**160)-1)/n)
-    for index in range(n):
-        if(index * division < hashKey ) and (hashKey< (index + 1) * division):
-            nodeID = index + 1
+    global ALIVE_SN
+    section = findSection(hashKey)
+    targetList = []
+    pointer = (section+1) % 8 + 1
+    for i in range(8):
+        if pointer in ALIVE_SN:
+            targetList.append(pointer)
+        if len(targetList) == 3:
             break
-    targetList = list(map(lambda x: (x + len(SN)) % len(SN), [nodeID, nodeID-1, nodeID-2]))
-    targetList = [8 if i == 0 else i for i in targetList]
+        else:
+            pointer = pointer % 8 + 1
     return targetList
+    # n = len(SN)
+    # division = int(((2**160)-1)/n)
+    # for index in range(n):
+    #     if(index * division < hashKey ) and (hashKey< (index + 1) * division):
+    #         nodeID = index + 1
+    #         break
+    # targetList = list(map(lambda x: (x + len(SN)) % len(SN), [nodeID, nodeID-1, nodeID-2]))
+    # targetList = [8 if i == 0 else i for i in targetList]
+    # return targetList
 
 
 # can only add one file at a time 
@@ -81,20 +99,28 @@ async def addFileToNode(filename, content):
         print('target nodes are : ', targetList)
         # Forward the request
         async with aiohttp.ClientSession() as session:
+            tasks = []
             for node in targetList:
                 if(node == currentNode):
                     storeFile(filename, content)
                     FILE_LIST.add(filename)
                 else:
-                    print('the request is : http://127.0.0.1:{}/file/{}'.format(SN[node], filename)  )
+                    # print('the request is : http://127.0.0.1:{}/file/{}'.format(SN[node], filename)  )
                     nodePort = SN[node]
-                    async with session.post('http://127.0.0.1:{}/file/{}'.format(nodePort, filename), data=content) as resp:
-                        print(await resp.read())
-                print(' file: {} is added to SN: {}  '.format(filename, node))
+                    tasks.append(session.post('http://127.0.0.1:{}/file/{}'.format(nodePort, filename), data=content))
+                # print(' file: {} is added to SN: {}  '.format(filename, node))
+            if len(tasks) != 0:
+                await asyncio.wait(tasks)
             # notify the directory server about adding the file
-            async with session.post('http://127.0.0.1:8888/file/{}'.format(filename), data = filename) as resp:
+            async with session.post('http://127.0.0.1:8888/file/{}'.format(filename)) as resp:
                 await resp.read()
-        
+
+def findAPossibleStorage():
+    global ALIVE_SN
+    global currentNode
+    global SN
+
+
 
 # invoked by the requester to read the file by provide filename.
 async def readFile(filename):
@@ -109,10 +135,27 @@ async def readFile(filename):
             try:
                 f = open('{}/{}'.format(folder, filename), 'rb')
                 response = f.read()
+            except Exception as e:
+                response = None
             finally:
                 if f:
                     f.close() 
-        else: response = None
+        else:
+            if targetList.index(currentNode) == 0:
+                response = None
+            else:
+                async with aiohttp.ClientSession() as session:
+                    nodeId = targetList[targetList.index(currentNode)-1]
+                    nodePort = SN[nodeId]
+                    print(nodePort)
+                    result = await session.get('http://127.0.0.1:{}/file/{}'.format(nodePort,filename))
+                    if result.status != 200:
+                        response = None
+                    else:
+                        content = await result.read()
+                        storeFile(filename,content)
+                        FILE_LIST.add(filename)
+                        response = content
     # if the file is not stored in the current node
     else:
         async with aiohttp.ClientSession() as session:

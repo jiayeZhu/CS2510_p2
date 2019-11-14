@@ -5,7 +5,9 @@ from services import getStorageNodeStatus, refreshStorgateNodeStatus, setState, 
 async def heartBeatHandler(request):
     storageNodeId = int(request.match_info['id'])
     await refreshStorgateNodeStatus(storageNodeId)
-    return web.Response()
+    status = getStorageNodeStatus()
+    result = [i + 1 for i in range(8) if status[i] != 0]
+    return web.json_response({'alive_sn_list': result})
 
 
 async def getSNStatusHandler(request):

@@ -4,7 +4,7 @@ import random
 
 HEARTBEAT_TIMEOUT = 3
 SN_STATUS = list((HEARTBEAT_TIMEOUT,) * 8)
-FILE_LIST = {}
+FILE_LIST = set()
 SN_ADDR_LIST = ['127.0.0.1:20001', '127.0.0.1:20002', '127.0.0.1:20003', '127.0.0.1:20004', '127.0.0.1:20005',
                 '127.0.0.1:20006', '127.0.0.1:20007', '127.0.0.1:20008']
 PORT = 18888
@@ -106,6 +106,7 @@ def getFileList():
 
 # files should be a list of filename
 async def addFileToFileList(files):
+    print(files)
     FILE_LIST.update(files)
     await sync()
 

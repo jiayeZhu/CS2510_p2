@@ -13,7 +13,11 @@ async def readFileHandler(request):
     filename = request.match_info['filename']
     response = await readFile(filename)
     if response:
-        return web.Response(body=response)
+        if isinstance(response,str):
+            print('http://{}/file/{}'.format(response,filename))
+            raise web.HTTPTemporaryRedirect('http://{}/file/{}'.format(response,filename))
+        else:
+            return web.Response(body=response)
     else:
         raise web.HTTPNotFound
 
