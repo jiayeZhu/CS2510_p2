@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import random
 
-HEARTBEAT_TIMEOUT = 5
+HEARTBEAT_TIMEOUT = 3
 SN_STATUS = list((HEARTBEAT_TIMEOUT,) * 8)
 FILE_LIST = {}
 SN_ADDR_LIST = ['127.0.0.1:20001', '127.0.0.1:20002', '127.0.0.1:20003', '127.0.0.1:20004', '127.0.0.1:20005',
@@ -39,7 +39,7 @@ def countdown(x):
         return x - 1
 
 
-async def sync():
+async def sync(hbsync=False,hbid=-1):
     global PEERS
     global DNS_addr
     async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
@@ -48,11 +48,18 @@ async def sync():
             peers = await session.get('http://' + DNS_addr + '/ds/list/alive')
             peers = await peers.json()
             setDSPeers(peers['ds_list'])
-            tasks = [session.put('http://' + addr + '/sync', json=getDSState()) for addr in PEERS if addr != '127.0.0.1:{}'.format(getDSPORT())]
+            jsonData = getDSState()
+            if hbsync:
+                jsonData['hbsync'] = True
+                jsonData['hbid'] = hbid
+            else:
+                jsonData['hbsync'] = False
+            tasks = [session.put('http://{}/sync'.format(addr), json=jsonData) for addr in PEERS if addr != '127.0.0.1:{}'.format(getDSPORT())]
             if len(tasks) != 0:
                 await asyncio.wait(tasks)
-        except:
+        except Exception as e:
             print('DS {} failed when sync()'.format(DSID))
+            print(e)
 
 
 async def DSbeat():
@@ -109,10 +116,13 @@ def getStorageNodeStatus(id=-1):
     else:
         return SN_STATUS[id]
 
+def setStorageNodeStatue(id):
+    SN_STATUS[id] = HEARTBEAT_TIMEOUT
+
 
 async def refreshStorgateNodeStatus(id):
     SN_STATUS[id] = HEARTBEAT_TIMEOUT
-    await sync()
+    await sync(True,id)
 
 
 def getDSState():

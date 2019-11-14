@@ -1,5 +1,5 @@
 from aiohttp import web
-from services import getStorageNodeStatus, refreshStorgateNodeStatus, setState, addFileToFileList, connect, getFileList, getDSState
+from services import getStorageNodeStatus, refreshStorgateNodeStatus, setState, addFileToFileList, connect, getFileList, getDSState,setStorageNodeStatue
 
 
 async def heartBeatHandler(request):
@@ -15,7 +15,11 @@ async def getSNStatusHandler(request):
 
 async def syncHandler(request):
     state = await request.json()
-    setState(state)
+    if not state['hbsync']:
+        setState(state)
+    else:
+        hbid = state['hbid']
+        setStorageNodeStatue(hbid)
     return web.Response()
 
 
@@ -38,10 +42,16 @@ async def addFileHandler(request):
     return web.Response()
 
 
+async def getAliveSNListHandler(request):
+    status = getStorageNodeStatus()
+    result = [i+1 for i in range(8) if status[i] != 0]
+    return web.json_response({'alive_sn_list':result})
+
 routes = [web.get('/sn_status', getSNStatusHandler),
           web.put('/hb/{id}', heartBeatHandler),
           web.put('/sync', syncHandler),
           web.get('/sync', getStateHandler),
           web.get('/connect', connectHandler),
           web.get('/filelist', getFileListHandler),
-          web.post('/file/{filename}', addFileHandler)]
+          web.post('/file/{filename}', addFileHandler),
+          web.get('/alive_snlist',getAliveSNListHandler)]

@@ -1,6 +1,6 @@
 import asyncio
 import random
-HEARTBEAT_TIMEOUT=5
+HEARTBEAT_TIMEOUT=3
 DS_list = ['127.0.0.1:18888', '127.0.0.1:18889', '127.0.0.1:18890']
 DS_STATUS = list((HEARTBEAT_TIMEOUT,) * 3)
 
@@ -12,7 +12,7 @@ def countdown(x):
 
 
 def getOneDS():
-    return random.sample(DS_list, 1)[0]
+    return random.sample([DS_list[i]for i in range(3) if DS_STATUS[i] != 0], 1)[0]
 
 
 def getDSList(aliveOnly=False):
