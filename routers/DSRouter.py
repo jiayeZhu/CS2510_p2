@@ -35,7 +35,7 @@ async def connectHandler(request):
 
 
 async def getFileListHandler(request):
-    return web.json_response({'fileList:':getFileList()})
+    return web.json_response({'fileList':getFileList()})
 
 
 async def addFileHandler(request):
