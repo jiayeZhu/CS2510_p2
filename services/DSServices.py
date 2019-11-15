@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import random
 
-HEARTBEAT_TIMEOUT = 3
+HEARTBEAT_TIMEOUT = 4
 SN_STATUS = list((HEARTBEAT_TIMEOUT,) * 8)
 FILE_LIST = set()
 SN_ADDR_LIST = ['127.0.0.1:20001', '127.0.0.1:20002', '127.0.0.1:20003', '127.0.0.1:20004', '127.0.0.1:20005',
@@ -42,7 +42,7 @@ def countdown(x):
 async def sync(hbsync=False,hbid=-1):
     global PEERS
     global DNS_addr
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+    async with aiohttp.ClientSession() as session:
         DSID = getDSPORT() - 18888
         try:
             peers = await session.get('http://' + DNS_addr + '/ds/list/alive')
@@ -58,8 +58,9 @@ async def sync(hbsync=False,hbid=-1):
             if len(tasks) != 0:
                 await asyncio.wait(tasks)
         except Exception as e:
-            print('DS {} failed when sync()'.format(DSID))
-            print(e)
+            pass
+            # print('DS {} failed when sync()'.format(DSID))
+            # print(e)
 
 
 async def DSbeat():
@@ -69,7 +70,7 @@ async def DSbeat():
     global FIRST
     await asyncio.sleep(1)
     if FIRST:
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+        async with aiohttp.ClientSession() as session:
             try:
                 peers = await session.get('http://' + DNS_addr + '/ds/list/alive')
                 peers = await peers.json()
@@ -78,19 +79,19 @@ async def DSbeat():
                 else:
                     state = await session.get('http://{}/sync'.format(peers['ds_list'][0]))
                     state = await state.json()
-                    print(state)
                     FIRST = False
             except:
                 pass
     while True:
         await asyncio.sleep(1)
         SN_STATUS = list(map(countdown, SN_STATUS))
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+        async with aiohttp.ClientSession() as session:
             DSID = getDSPORT() - 18888
             try:
                 await session.put('http://{}/ds/hb/{}'.format(DNS_addr, DSID))
             except:
-                print('DS {} failed when beat()'.format(DSID))
+                pass
+                # print('DS {} failed when beat()'.format(DSID))
             # await sync()
 
 
@@ -106,7 +107,7 @@ def getFileList():
 
 # files should be a list of filename
 async def addFileToFileList(files):
-    print(files)
+    # print(files)
     FILE_LIST.update(files)
     await sync()
 

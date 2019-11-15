@@ -158,7 +158,7 @@ def getFileList():
 
 
 async def fetchFile(targertAddr, filename):
-    async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+    async with aiohttp.ClientSession() as session:
         try:
             result = await session.get('http://127.0.0.1:{}/file/{}'.format(targertAddr, filename))
             if result.status != 404:
@@ -181,7 +181,7 @@ async def SNbeat():
     await asyncio.sleep(1)
     while True:
         await asyncio.sleep(1)
-        async with aiohttp.ClientSession(timeout=aiohttp.ClientTimeout(total=5)) as session:
+        async with aiohttp.ClientSession() as session:
             SNID = currentNode - 1
             try:
                 result = await session.put('http://{}/hb/{}'.format(server, SNID))

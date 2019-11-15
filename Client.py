@@ -24,7 +24,7 @@ async def connect():
             response = await result.json()
             return int(response['SN'].split(':')[-1])
         except Exception as e:
-            print(e)
+            return await connect()
 
 
 def getFile(filename):
@@ -50,7 +50,8 @@ async def addFile(filename, data, p=-1):
             if (result.status == 200) and p == -1:
                 print('{} added successfully'.format(filename))
         except Exception as e:
-            print(e)
+            # print(e)
+            pass
 
 
 async def getFilelist(position, p=-1):
@@ -73,8 +74,8 @@ async def getFilelist(position, p=-1):
             return (filelist)
 
         except Exception as e:
-            print(e)
-
+            # print(e)
+            return []
 
 async def readFile(filename, p=-1):
     global SNport
@@ -86,7 +87,8 @@ async def readFile(filename, p=-1):
             response = await result.read()
             return response
         except Exception as e:
-            print(e)
+            # print(e)
+            return b''
 
 
 async def main():

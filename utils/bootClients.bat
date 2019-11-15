@@ -1,0 +1,10 @@
+start cmd /k python ClientBot.pyc -d cbot_1 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_0 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_2 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_3 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_4 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_5 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_6 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_7 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_8 -M 200 -N 10 -r 0.3 -f 5
+start cmd /k python ClientBot.pyc -d cbot_9 -M 200 -N 10 -r 0.3 -f 5
