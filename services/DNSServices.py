@@ -1,6 +1,6 @@
 import asyncio
 import random
-HEARTBEAT_TIMEOUT=3
+HEARTBEAT_TIMEOUT=2
 DS_list = ['127.0.0.1:18888', '127.0.0.1:18889', '127.0.0.1:18890']
 DS_STATUS = list((HEARTBEAT_TIMEOUT,) * 3)
 

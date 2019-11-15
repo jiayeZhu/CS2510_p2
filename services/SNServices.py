@@ -12,6 +12,7 @@ server = "127.0.0.1:8888"
 folder = 'SN{}_storage'.format(currentNode)
 FILE_LIST = set()
 FIRST = True
+UP_TO_DATE=True
 
 
 def setPort(port):
@@ -177,6 +178,7 @@ async def SNbeat():
     global FIRST
     global SN
     global FILE_LIST
+    global UP_TO_DATE
     await asyncio.sleep(1)
     while True:
         await asyncio.sleep(1)
@@ -185,8 +187,10 @@ async def SNbeat():
             try:
                 result = await session.put('http://{}/hb/{}'.format(server, SNID))
                 result = await result.json()
-                ALIVE_SN = result['alive_sn_list']
-                if FIRST:
+                if ALIVE_SN != result['alive_sn_list']:
+                    ALIVE_SN = result['alive_sn_list']
+                    UP_TO_DATE = False
+                if FIRST or not UP_TO_DATE:
                     result = await session.get('http://{}/filelist'.format(server))
                     result = await result.json()
                     systemFileList = result['fileList']
@@ -204,6 +208,7 @@ async def SNbeat():
                         if len(tasks) > 0:
                             await asyncio.wait(tasks)
                     FIRST = False
+                    UP_TO_DATE = True
             except Exception as e:
                 print('SN {} failed when beat() with exception'.format(currentNode))
                 print(e)

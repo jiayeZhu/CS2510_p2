@@ -24,7 +24,7 @@ async def readFileHandler(request):
 #return the list of files stored in current node
 async def getFileListHandler(request):
     FileList = getFileList()
-    return web.json_response({'fileList:':getFileList()})
+    return web.json_response({'fileList':getFileList()})
 
 
 routes = [web.post('/file/{filename}', addFileHandler),
