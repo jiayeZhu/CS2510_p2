@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import random
 
-HEARTBEAT_TIMEOUT = 2
+HEARTBEAT_TIMEOUT = 3
 SN_STATUS = list((HEARTBEAT_TIMEOUT,) * 8)
 FILE_LIST = set()
 SN_ADDR_LIST = ['127.0.0.1:20001', '127.0.0.1:20002', '127.0.0.1:20003', '127.0.0.1:20004', '127.0.0.1:20005',

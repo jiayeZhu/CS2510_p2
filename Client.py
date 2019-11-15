@@ -17,13 +17,12 @@ def print_help():
 
 
 async def connect():
-    global SNport
+    # global SNport
     async with aiohttp.ClientSession() as session:
         try:
             result = await session.get('http://127.0.0.1:8888/connect')
             response = await result.json()
-            SNport = int(response['SN'].split(':')[-1])
-            return SNport
+            return int(response['SN'].split(':')[-1])
         except Exception as e:
             print(e)
 
@@ -39,53 +38,62 @@ def getFile(filename):
         return None
 
 
-async def addFile(filename, data):
+async def addFile(filename, data, p=-1):
+    global SNport
+    port = SNport if p == -1 else p
     if (data == None):
         return
         # print('No such file : ', filename)
     async with aiohttp.ClientSession() as session:
         try:
-            result = await session.post('http://127.0.0.1:{}/file/{}'.format(SNport, filename), data=data)
-            if (result.status == 200):
+            result = await session.post('http://127.0.0.1:{}/file/{}'.format(port, filename), data=data)
+            if (result.status == 200) and p == -1:
                 print('{} added successfully'.format(filename))
         except Exception as e:
             print(e)
 
 
-async def getFilelist(position):
+async def getFilelist(position, p=-1):
     global SNport
+    port = SNport if p == -1 else p
     async with aiohttp.ClientSession() as session:
         try:
-            addr = 'http://127.0.0.1:8888/filelist' if position == 'global' else 'http://127.0.0.1:{}/filelist'.format(SNport)
+            addr = 'http://127.0.0.1:8888/filelist' if position == 'global' else 'http://127.0.0.1:{}/filelist'.format(port)
             result = await session.get(addr)
             # print(await result.read())
             response = await result.json()
             # print('the filelist : ',json.loads(response)['fileList:'])
             filelist = response['fileList']
-            if (filelist == []):
-                return 'No file is stored in the current system' if position == 'global' else 'No file is stored in ' \
-                                                                                              'the current node'
+            if filelist == []:
+                if p == -1:
+                    return 'No file is stored in the current system' if position == 'global' else 'No file is stored ' \
+                                                                                                  'in the current node '
+                else:
+                    return []
             return (filelist)
 
         except Exception as e:
             print(e)
 
 
-async def readFile(filename):
+async def readFile(filename, p=-1):
+    global SNport
+    port = SNport if p == -1 else p
     async with aiohttp.ClientSession() as session:
         try:
-            result = await session.get('http://127.0.0.1:{}/file/{}'.format(SNport, filename))
+            result = await session.get('http://127.0.0.1:{}/file/{}'.format(port, filename))
             # print(result.status)
-            response = (await result.read()).decode("utf-8")
+            response = await result.read()
             return response
         except Exception as e:
             print(e)
 
 
 async def main():
+    global SNport
     print_help()
     c_start_time = time.time()
-    await connect()
+    SNport = await connect()
     c_timecost = time.time()-c_start_time
     print("connected to storage node : ", SNport)
     print('Time cost for connecting is {} ms'.format(c_timecost*1000))
@@ -119,5 +127,5 @@ async def main():
             print_help()
     return
 
-
-asyncio.run(main())
+if __name__ == '__main__':
+    asyncio.run(main())
