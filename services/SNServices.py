@@ -147,7 +147,7 @@ async def readFile(filename):
             # print("the request is : http://127.0.0.1:{}/file/{}".format(nodePort, filename))
             async with session.get('http://127.0.0.1:{}/file/{}'.format(nodePort, filename)) as resp:
                 response = await resp.read()
-                print(await resp.read())
+                # print(await resp.read())
     return response
     # print(response)
     # return  str(response, encoding='utf-8')
