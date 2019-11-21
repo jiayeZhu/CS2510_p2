@@ -2,7 +2,7 @@ import asyncio
 import aiohttp
 import random
 
-HEARTBEAT_TIMEOUT = 4
+HEARTBEAT_TIMEOUT = 3
 SN_STATUS = list((HEARTBEAT_TIMEOUT,) * 8)
 FILE_LIST = set()
 SN_ADDR_LIST = ['127.0.0.1:20001', '127.0.0.1:20002', '127.0.0.1:20003', '127.0.0.1:20004', '127.0.0.1:20005',
@@ -11,6 +11,8 @@ PORT = 18888
 PEERS = []
 DNS_addr = '127.0.0.1:8888'
 FIRST = True
+RECOVERYLIST = []
+
 
 def setDSPORT(port):
     global PORT
@@ -39,7 +41,7 @@ def countdown(x):
         return x - 1
 
 
-async def sync(hbsync=False,hbid=-1):
+async def sync(hbsync=False, hbid=-1):
     global PEERS
     global DNS_addr
     async with aiohttp.ClientSession() as session:
@@ -54,7 +56,8 @@ async def sync(hbsync=False,hbid=-1):
                 jsonData['hbid'] = hbid
             else:
                 jsonData['hbsync'] = False
-            tasks = [session.put('http://{}/sync'.format(addr), json=jsonData) for addr in PEERS if addr != '127.0.0.1:{}'.format(getDSPORT())]
+            tasks = [session.put('http://{}/sync'.format(addr), json=jsonData) for addr in PEERS if
+                     addr != '127.0.0.1:{}'.format(getDSPORT())]
             if len(tasks) != 0:
                 await asyncio.wait(tasks)
         except Exception as e:
@@ -74,7 +77,7 @@ async def DSbeat():
             try:
                 peers = await session.get('http://' + DNS_addr + '/ds/list/alive')
                 peers = await peers.json()
-                if len(peers['ds_list']) == 0: # no alive nodes, state is clean
+                if len(peers['ds_list']) == 0:  # no alive nodes, state is clean
                     FIRST = False
                 else:
                     state = await session.get('http://{}/sync'.format(peers['ds_list'][0]))
@@ -93,7 +96,6 @@ async def DSbeat():
                 pass
                 # print('DS {} failed when beat()'.format(DSID))
             # await sync()
-
 
 
 async def connect():
@@ -118,13 +120,21 @@ def getStorageNodeStatus(id=-1):
     else:
         return SN_STATUS[id]
 
+
 def setStorageNodeStatue(id):
     SN_STATUS[id] = HEARTBEAT_TIMEOUT
 
 
 async def refreshStorgateNodeStatus(id):
-    SN_STATUS[id] = HEARTBEAT_TIMEOUT
-    await sync(True,id)
+    global SN_STATUS
+    global RECOVERYLIST
+    if SN_STATUS[id] == 0 and id not in RECOVERYLIST:
+        RECOVERYLIST.append(id)
+    else:
+        SN_STATUS[id] = HEARTBEAT_TIMEOUT
+        if id in RECOVERYLIST:
+            RECOVERYLIST.remove(id)
+    await sync(True, id)
 
 
 def getDSState():

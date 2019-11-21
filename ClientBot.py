@@ -42,12 +42,13 @@ async def botmain():
             fout.close()
         localFileList.append(os.path.join(OPT_d, filename))
 
-    c_start_time = time.time()
-    SNport = await connect()
-    c_timecost = time.time() - c_start_time
-    print('connect\t[]\t{} ms'.format(c_timecost * 1000))
+
 
     while True:
+        c_start_time = time.time()
+        SNport = await connect()
+        c_timecost = time.time() - c_start_time
+        print('connect\t[]\t{} ms'.format(c_timecost * 1000))
         # fetch file list
         ls_start = time.time()
         remoteFileList = await getFilelist('global', SNport)

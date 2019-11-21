@@ -158,12 +158,14 @@ def getFileList():
 
 
 async def fetchFile(targertAddr, filename):
+    global FILE_LIST
     async with aiohttp.ClientSession() as session:
         try:
             result = await session.get('http://127.0.0.1:{}/file/{}'.format(targertAddr, filename))
             if result.status != 404:
                 content = await result.read()
                 storeFile(filename, content)
+                FILE_LIST.add(filename)
             return
         except Exception as e:
             pass
